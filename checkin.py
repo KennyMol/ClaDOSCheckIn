@@ -3,10 +3,10 @@
 
 from __future__ import annotations
 
-import json
 import base64
 import hashlib
 import hmac
+import json
 import os
 import sys
 import time
@@ -58,23 +58,20 @@ def feishu_signature(secret: str, timestamp: str) -> str:
     return base64.b64encode(digest).decode("utf-8")
 
 
-def send_feishu_failure(message: str) -> None:
+def send_feishu_message(title: str, lines: list[str]) -> None:
     webhook = os.getenv("FEISHU_WEBHOOK_URL", "").strip()
     if not webhook:
         return
 
-    lines = [
-        "GLaDOS 自动签到失败",
-        f"错误: {message}",
-    ]
+    message_lines = [title, *lines]
     run_url = github_run_url()
     if run_url:
-        lines.append(f"日志: {run_url}")
+        message_lines.append(f"日志: {run_url}")
 
     payload: dict[str, Any] = {
         "msg_type": "text",
         "content": {
-            "text": "\n".join(lines),
+            "text": "\n".join(message_lines),
         },
     }
 
@@ -91,6 +88,22 @@ def send_feishu_failure(message: str) -> None:
 
     with urllib.request.urlopen(request, timeout=30) as response:
         response.read()
+
+
+def send_feishu_failure(message: str) -> None:
+    send_feishu_message(
+        "GLaDOS 自动签到失败",
+        [f"错误: {message}"],
+    )
+
+
+def send_feishu_success(status_summary: str, result_message: str) -> None:
+    lines = []
+    if status_summary:
+        lines.append(f"状态: {status_summary}")
+    if result_message:
+        lines.append(f"结果: {result_message}")
+    send_feishu_message("GLaDOS 自动签到成功", lines)
 
 
 def request_json(
@@ -171,7 +184,8 @@ def main() -> int:
             f"Failed to fetch status ({status_code}): "
             f"{json.dumps(status_data, ensure_ascii=False)}"
         )
-    print(f"[status] {status_text(status_data)}")
+    status_summary = status_text(status_data)
+    print(f"[status] {status_summary}")
 
     checkin_code, checkin_data = request_json(
         method="POST",
@@ -193,6 +207,8 @@ def main() -> int:
         message = str(checkin_data.get("message") or checkin_data.get("msg") or "")
     if message:
         print(f"[result] {message}")
+
+    send_feishu_success(status_summary, message or "签到完成")
     return 0
 
 

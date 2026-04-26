@@ -12,6 +12,8 @@ jobs:
       contents: read
     env:
       GLADOS_COOKIE: ${{ secrets.GLADOS_COOKIE }}
+      FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+      FEISHU_BOT_SECRET: ${{ secrets.FEISHU_BOT_SECRET }}
       GLADOS_BASE_URL: ${{ vars.GLADOS_BASE_URL }}
       GLADOS_CHECKIN_TOKEN: ${{ vars.GLADOS_CHECKIN_TOKEN }}
       GLADOS_ORIGIN: ${{ vars.GLADOS_ORIGIN }}

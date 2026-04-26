@@ -4,8 +4,12 @@
 from __future__ import annotations
 
 import json
+import base64
+import hashlib
+import hmac
 import os
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -37,6 +41,56 @@ def normalized_base_url() -> str:
 def default_token(base_url: str) -> str:
     host = urllib.parse.urlparse(base_url).netloc
     return host or "glados.one"
+
+
+def github_run_url() -> str:
+    server_url = os.getenv("GITHUB_SERVER_URL", "https://github.com").strip()
+    repository = os.getenv("GITHUB_REPOSITORY", "").strip()
+    run_id = os.getenv("GITHUB_RUN_ID", "").strip()
+    if repository and run_id:
+        return f"{server_url}/{repository}/actions/runs/{run_id}"
+    return ""
+
+
+def feishu_signature(secret: str, timestamp: str) -> str:
+    string_to_sign = f"{timestamp}\n{secret}".encode("utf-8")
+    digest = hmac.new(string_to_sign, b"", digestmod=hashlib.sha256).digest()
+    return base64.b64encode(digest).decode("utf-8")
+
+
+def send_feishu_failure(message: str) -> None:
+    webhook = os.getenv("FEISHU_WEBHOOK_URL", "").strip()
+    if not webhook:
+        return
+
+    lines = [
+        "GLaDOS 自动签到失败",
+        f"错误: {message}",
+    ]
+    run_url = github_run_url()
+    if run_url:
+        lines.append(f"日志: {run_url}")
+
+    payload: dict[str, Any] = {
+        "msg_type": "text",
+        "content": {
+            "text": "\n".join(lines),
+        },
+    }
+
+    secret = os.getenv("FEISHU_BOT_SECRET", "").strip()
+    if secret:
+        timestamp = str(int(time.time()))
+        payload["timestamp"] = timestamp
+        payload["sign"] = feishu_signature(secret, timestamp)
+
+    body = json.dumps(payload).encode("utf-8")
+    request = urllib.request.Request(url=webhook, data=body, method="POST")
+    request.add_header("Content-Type", "application/json")
+    request.add_header("User-Agent", "ClaDOSCheckIn/1.0")
+
+    with urllib.request.urlopen(request, timeout=30) as response:
+        response.read()
 
 
 def request_json(
@@ -147,4 +201,9 @@ if __name__ == "__main__":
         raise SystemExit(main())
     except Exception as exc:  # noqa: BLE001
         print(f"[error] {exc}", file=sys.stderr)
+        try:
+            send_feishu_failure(str(exc))
+            print("[notify] Feishu failure notification sent", file=sys.stderr)
+        except Exception as notify_exc:  # noqa: BLE001
+            print(f"[notify-error] {notify_exc}", file=sys.stderr)
         raise SystemExit(1)

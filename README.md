@@ -20,6 +20,8 @@ GitHub Actions automation for daily GLaDOS check-in.
 2. Go to `Settings -> Secrets and variables -> Actions`.
 3. Add this secret:
    - `GLADOS_COOKIE`
+   - `FEISHU_WEBHOOK_URL` (optional, only needed for failure notifications)
+   - `FEISHU_BOT_SECRET` (optional, only needed if your Feishu bot has signature verification enabled)
 4. Optional variables:
    - `GLADOS_BASE_URL`
    - `GLADOS_CHECKIN_TOKEN`
@@ -45,3 +47,4 @@ py -3 checkin.py
 - The workflow schedule uses UTC.
 - The included cron runs at `01:05 UTC`, which is `09:05` China Standard Time.
 - Keep your cookie only in GitHub Secrets.
+- If `FEISHU_WEBHOOK_URL` is configured, the workflow sends a Feishu text message only when check-in fails.

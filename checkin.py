@@ -12,6 +12,14 @@ import urllib.request
 from typing import Any
 
 
+def optional_env(name: str, default: str) -> str:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    value = value.strip()
+    return value or default
+
+
 def env(name: str, default: str | None = None) -> str:
     value = os.getenv(name, default)
     if value is None or not value.strip():
@@ -20,7 +28,7 @@ def env(name: str, default: str | None = None) -> str:
 
 
 def normalized_base_url() -> str:
-    raw = os.getenv("GLADOS_BASE_URL", "https://glados.one").strip().rstrip("/")
+    raw = optional_env("GLADOS_BASE_URL", "https://glados.one").rstrip("/")
     if not raw.startswith(("http://", "https://")):
         raw = f"https://{raw}"
     return raw
@@ -90,9 +98,9 @@ def status_text(status_data: Any) -> str:
 def main() -> int:
     cookie = env("GLADOS_COOKIE")
     base_url = normalized_base_url()
-    token = os.getenv("GLADOS_CHECKIN_TOKEN", default_token(base_url)).strip()
-    origin = os.getenv("GLADOS_ORIGIN", base_url).strip().rstrip("/")
-    referer = os.getenv("GLADOS_REFERER", f"{origin}/console/checkin").strip()
+    token = optional_env("GLADOS_CHECKIN_TOKEN", default_token(base_url))
+    origin = optional_env("GLADOS_ORIGIN", base_url).rstrip("/")
+    referer = optional_env("GLADOS_REFERER", f"{origin}/console/checkin")
 
     status_url = f"{base_url}/api/user/status"
     checkin_url = f"{base_url}/api/user/checkin"

@@ -1,0 +1,29 @@
+name: GLaDOS Daily Check-in
+
+on:
+  schedule:
+    - cron: "5 1 * * *"
+  workflow_dispatch:
+
+jobs:
+  checkin:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      GLADOS_COOKIE: ${{ secrets.GLADOS_COOKIE }}
+      GLADOS_BASE_URL: ${{ vars.GLADOS_BASE_URL }}
+      GLADOS_CHECKIN_TOKEN: ${{ vars.GLADOS_CHECKIN_TOKEN }}
+      GLADOS_ORIGIN: ${{ vars.GLADOS_ORIGIN }}
+      GLADOS_REFERER: ${{ vars.GLADOS_REFERER }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run daily check-in
+        run: python checkin.py

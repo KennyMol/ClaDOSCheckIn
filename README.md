@@ -45,6 +45,6 @@ py -3 checkin.py
 ## Notes
 
 - The workflow schedule uses UTC.
-- The included cron runs at `01:05 UTC`, which is `09:05` China Standard Time.
+- The included cron runs at `01:37 UTC`, which is `09:37` China Standard Time.
 - Keep your cookie only in GitHub Secrets.
 - If `FEISHU_WEBHOOK_URL` is configured, the workflow sends a Feishu text message for both success and failure.

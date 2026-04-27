@@ -2,7 +2,7 @@ name: GLaDOS Daily Check-in
 
 on:
   schedule:
-    - cron: "37 1 * * *"
+    - cron: "20 2 * * *"
   workflow_dispatch:
 
 jobs:
